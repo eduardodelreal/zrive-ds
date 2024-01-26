@@ -1,31 +1,9 @@
 import boto3
 import pandas as pd
 import os
-
 import datetime
 
-'''
-# Inicializar el cliente S3
-s3 = boto3.client('s3')
 
-# Definir el bucket y la carpeta de origen
-bucket_name = 'zrive-ds-data'
-prefix = 'groceries/sampled-datasets/'
-
-# Listar los archivos en el directorio especificado
-objects = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-
-# Crear un directorio local para guardar los archivos
-local_directory = 'local_data'
-os.makedirs(local_directory, exist_ok=True)
-
-# Descargar cada archivo
-for obj in objects.get('Contents', []):
-    key = obj['Key']
-    if not key.endswith('/'):  # Ignorar carpetas (keys que terminan en '/')
-        destination_path = os.path.join(local_directory, key.split('/')[-1])
-        s3.download_file(bucket_name, key, destination_path)
-'''
 
 #first of all we do a little of analysis, as we open all the different datasets
 
@@ -35,64 +13,45 @@ df_orders = pd.read_parquet('local_data/orders.parquet', engine='pyarrow')
 df_regulars = pd.read_parquet('local_data/regulars.parquet', engine='pyarrow')
 df_users = pd.read_parquet('local_data/users.parquet', engine='pyarrow')
 
-############################################3
-#funciones de prueba
-def mean_price():
-    price_column=df_inventory["price"]
-    mean_price = price_column.mean()
-    print(mean_price)
-
-def order_dates(n:int):
-    
-    dates = pd.to_datetime(df_orders['order_date'])
-    new_dates= dates.to_list()
-    if n==0: #si es cero que nos printee todo
-        print(new_dates)
-    else:
-        for i in range(n): #sino que nos de un rango de fechas especificas
-            print(new_dates[i])
-
-######################################################
-            
-def crear_df_from_orders_as_productid_n_orders_purch_prob(): #creamos un df con id del producto, 
-    #el num de veces que se ha pedido y la probabilidad de compra
-    
-    # convertir columna de pedidos en una serie de valores individuales.
-    exploded_items = df_orders['ordered_items'].explode()
-    #recuento de la frecuencia de cada 'item_id' con value_counts():   
+def combinar_datasets_totales():
+    # Paso 1: Crear DataFrame de pedidos
+    exploded_items = df_orders['ordered_items'].explode()  
     item_counts = exploded_items.value_counts()
-
-# 'item_counts' es ahora una Serie donde el índice es el 'item_id' y el valor es el recuento de frecuencias.
-    #print(item_counts)
-
-# Convertimos la serie de recuentos en un DataFrame con reset_index
-    item_counts_df_oders = item_counts.reset_index()
-    item_counts_df_oders.columns = ['product_id', 'number_of_orders']
-
-# Calculamos el número total de orders
+    item_counts_df_orders = item_counts.reset_index()
+    item_counts_df_orders.columns = ['product_id', 'number_of_orders']
     total_orders = len(df_orders)
+    item_counts_df_orders['purchase_probability'] = item_counts_df_orders['number_of_orders'] / total_orders
+    print("primeros cinco df orders: ", item_counts_df_orders.head())
 
-# Agregamos la columna de probabilidad de compra dividiendo por el número total de órdenes
-    item_counts_df_oders['purchase_probability'] = item_counts_df_oders['number_of_orders'] / total_orders
+    # Paso 2: Crear DataFrame de carritos abandonados
+    exploded_items_abandoned = df_abandoned_carts['variant_id'].explode()
+    item_counts_abandoned = exploded_items_abandoned.value_counts()
+    item_counts_df_abandoned = item_counts_abandoned.reset_index()
+    item_counts_df_abandoned.columns = ['product_id', 'number_of_abandoned']
+    total_abandoned_carts = len(df_abandoned_carts)
+    item_counts_df_abandoned['abandon_probability'] = item_counts_df_abandoned['number_of_abandoned'] / total_abandoned_carts
+    print("primeros cinco df abandoned: ", item_counts_df_abandoned.head())
 
-# Mostramos los primeros elementos para verificar
-    #print(item_counts_df_oders.head())
-    print(len(item_counts_df_oders))
-    return item_counts_df_oders
-    
-def combinar_datasets_prod_pedidos_inventario():
-    item_counts_df_oders=crear_df_from_orders_as_productid_n_orders_purch_prob()
-    df_ordered_products_existing=item_counts_df_oders[item_counts_df_oders["product_id"].isin(df_inventory["variant_id"])]
-    print(df_ordered_products_existing.head())
-    print("length of dataset: ",len(df_ordered_products_existing), " and length of inventory: ", len(df_inventory))
-    return df_ordered_products_existing
+    # Paso 3: Filtrar para incluir solo productos en inventario
+    df_orders_inventory = item_counts_df_orders[item_counts_df_orders["product_id"].isin(df_inventory["variant_id"])]
+    df_abandoned_inventory = item_counts_df_abandoned[item_counts_df_abandoned["product_id"].isin(df_inventory["variant_id"])]
 
-def combinar_datasets_abandoned_cart_inventario():
-    item_abandoned=crear_df_from_orders_as_productid_n_orders_purch_prob() #cambiar por funcion equivalente 
-    df_ordered_products_existing=item_counts_df_oders[item_counts_df_oders["product_id"].isin(df_inventory["variant_id"])]
-    print(df_ordered_products_existing.head())
-    print("length of dataset: ",len(df_ordered_products_existing), " and length of inventory: ", len(df_inventory))
-    return df_ordered_products_existing
+    # Paso 4: Combinar los DataFrames
+    df_combined = df_orders_inventory.merge(df_abandoned_inventory, on="product_id", how="outer")
+
+    # Rellenar valores NaN con 0, ya que algunos productos pueden no estar en ambos DataFrames
+    df_combined.fillna(0, inplace=True)
+
+    print(df_combined.head())
+    print("Longitud del dataset combinado: ", len(df_combined), " y longitud del inventario: ", len(df_inventory))
+    return df_combined
+
+# Uso de la función:
+# df_combinado_total = combinar_datasets_totales(df_orders, df_abandoned_carts, df_inventory)
+# df_combinado_total.head()
+
+
+
     
 
             
@@ -105,7 +64,8 @@ def main():
    #crear_df_from_orders_as_productid_n_orders_purch_prob()
    #print(len(df_inventory))
    #print(len(df_orders))
-   combinar_datasets_prod_pedidos_inventario()
+   #combinar_datasets_prod_pedidos_inventario()
+   combinar_datasets_totales()
    
 
 
