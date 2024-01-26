@@ -2,6 +2,7 @@ import boto3
 import pandas as pd
 import os
 import datetime
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -23,7 +24,7 @@ def combinar_datasets_totales():
     item_counts_df_orders.columns = ['product_id', 'number_of_orders']
     total_orders = len(df_orders)
     item_counts_df_orders['purchase_probability'] = item_counts_df_orders['number_of_orders'] / total_orders
-    print("primeros cinco df orders: ", item_counts_df_orders.head())
+    #print("primeros cinco df orders: ", item_counts_df_orders.head())
 
     # Paso 2: Crear DataFrame de carritos abandonados
     exploded_items_abandoned = df_abandoned_carts['variant_id'].explode()
@@ -32,7 +33,7 @@ def combinar_datasets_totales():
     item_counts_df_abandoned.columns = ['product_id', 'number_of_abandoned']
     total_abandoned_carts = len(df_abandoned_carts)
     item_counts_df_abandoned['abandon_probability'] = item_counts_df_abandoned['number_of_abandoned'] / total_abandoned_carts
-    print("primeros cinco df abandoned: ", item_counts_df_abandoned.head())
+    #print("primeros cinco df abandoned: ", item_counts_df_abandoned.head())
 
     # Paso 3: Filtrar para incluir solo productos en inventario
     df_orders_inventory = item_counts_df_orders[item_counts_df_orders["product_id"].isin(df_inventory["variant_id"])]
@@ -44,8 +45,8 @@ def combinar_datasets_totales():
     # Rellenar valores NaN con 0, ya que algunos productos pueden no estar en ambos DataFrames
     df_combined.fillna(0, inplace=True)
 
-    print(df_combined.head())
-    print("Longitud del dataset combinado: ", len(df_combined), " y longitud del inventario: ", len(df_inventory))
+    #print(df_combined.head())
+    #print("Longitud del dataset combinado: ", len(df_combined), " y longitud del inventario: ", len(df_inventory))
     
     
     # Configuración de la visualización
@@ -77,6 +78,9 @@ def combinar_datasets_totales():
 
     plt.tight_layout()
     plt.show()
+    
+
+    
 
 
 #para el plot; focus on :
@@ -137,6 +141,7 @@ def main():
    #combinar_datasets_prod_pedidos_inventario()
    combinar_datasets_totales()
    #plot_combined_dataset()
+   #hours_vs_orders_plot(df_abandoned_carts,'created_at')
    
 
 
