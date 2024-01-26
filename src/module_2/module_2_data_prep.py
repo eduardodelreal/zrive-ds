@@ -35,7 +35,7 @@ df_orders = pd.read_parquet('local_data/orders.parquet', engine='pyarrow')
 df_regulars = pd.read_parquet('local_data/regulars.parquet', engine='pyarrow')
 df_users = pd.read_parquet('local_data/users.parquet', engine='pyarrow')
 
-
+############################################3
 #funciones de prueba
 def mean_price():
     price_column=df_inventory["price"]
@@ -51,18 +51,19 @@ def order_dates(n:int):
     else:
         for i in range(n): #sino que nos de un rango de fechas especificas
             print(new_dates[i])
-            
-def orders_lista():
-    # Primero, necesitas convertir esa columna en una serie de valores individuales.
-    # Puedes hacer esto con el método 'explode' de Pandas:
-    exploded_items = df_orders['ordered_items'].explode()
 
-    # Ahora, 'exploded_items' es una Serie donde cada 'item_id' está en su propia fila.
-    # Puedes hacer un recuento de la frecuencia de cada 'item_id' con value_counts():   
+######################################################
+            
+def crear_df_from_orders_as_productid_n_orders_purch_prob(): #creamos un df con id del producto, 
+    #el num de veces que se ha pedido y la probabilidad de compra
+    
+    # convertir columna de pedidos en una serie de valores individuales.
+    exploded_items = df_orders['ordered_items'].explode()
+    #recuento de la frecuencia de cada 'item_id' con value_counts():   
     item_counts = exploded_items.value_counts()
 
 # 'item_counts' es ahora una Serie donde el índice es el 'item_id' y el valor es el recuento de frecuencias.
-    print(item_counts)
+    #print(item_counts)
 
 # Convertimos la serie de recuentos en un DataFrame con reset_index
     item_counts_df_oders = item_counts.reset_index()
@@ -75,18 +76,24 @@ def orders_lista():
     item_counts_df_oders['purchase_probability'] = item_counts_df_oders['number_of_orders'] / total_orders
 
 # Mostramos los primeros elementos para verificar
-    print(item_counts_df_oders.head())
+    #print(item_counts_df_oders.head())
+    print(len(item_counts_df_oders))
+    return item_counts_df_oders
     
-    
-    '''
-    lista=[]
-    
-    exploded_items = df_orders['ordered_items'].explode()
+def combinar_datasets_prod_pedidos_inventario():
+    item_counts_df_oders=crear_df_from_orders_as_productid_n_orders_purch_prob()
+    df_ordered_products_existing=item_counts_df_oders[item_counts_df_oders["product_id"].isin(df_inventory["variant_id"])]
+    print(df_ordered_products_existing.head())
+    print("length of dataset: ",len(df_ordered_products_existing), " and length of inventory: ", len(df_inventory))
+    return df_ordered_products_existing
 
-    item_counts = exploded_items.value_counts()
-
-    print(item_counts)
-    '''
+def combinar_datasets_abandoned_cart_inventario():
+    item_abandoned=crear_df_from_orders_as_productid_n_orders_purch_prob() #cambiar por funcion equivalente 
+    df_ordered_products_existing=item_counts_df_oders[item_counts_df_oders["product_id"].isin(df_inventory["variant_id"])]
+    print(df_ordered_products_existing.head())
+    print("length of dataset: ",len(df_ordered_products_existing), " and length of inventory: ", len(df_inventory))
+    return df_ordered_products_existing
+    
 
             
 
@@ -94,9 +101,12 @@ def orders_lista():
 
 def main():
    # mean_price()
-   # order_dates(5)
-   orders_lista()
-    
+   #order_dates(5)
+   #crear_df_from_orders_as_productid_n_orders_purch_prob()
+   #print(len(df_inventory))
+   #print(len(df_orders))
+   combinar_datasets_prod_pedidos_inventario()
+   
 
 
 if __name__ == "__main__":
