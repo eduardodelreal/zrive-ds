@@ -2,6 +2,8 @@ import boto3
 import pandas as pd
 import os
 import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 
@@ -44,13 +46,81 @@ def combinar_datasets_totales():
 
     print(df_combined.head())
     print("Longitud del dataset combinado: ", len(df_combined), " y longitud del inventario: ", len(df_inventory))
-    return df_combined
+    
+    
+    # Configuración de la visualización
+    plt.figure(figsize=(20, 10))
 
-# Uso de la función:
-# df_combinado_total = combinar_datasets_totales(df_orders, df_abandoned_carts, df_inventory)
-# df_combinado_total.head()
+    # Top 10 productos por frecuencia de compra
+    plt.subplot(2, 2, 1)
+    sns.barplot(x='product_id', y='number_of_orders', data=df_combined.sort_values('number_of_orders', ascending=False).head(10))
+    plt.title('Top 10 Productos por Frecuencia de Compra')
+    plt.xticks(rotation=45)
+
+    # Top 10 productos por probabilidad de compra
+    plt.subplot(2, 2, 2)
+    sns.barplot(x='product_id', y='purchase_probability', data=df_combined.sort_values('purchase_probability', ascending=False).head(10))
+    plt.title('Top 10 Productos por Probabilidad de Compra')
+    plt.xticks(rotation=45)
+
+    # Top 10 productos por frecuencia de abandono
+    plt.subplot(2, 2, 3)
+    sns.barplot(x='product_id', y='number_of_abandoned', data=df_combined.sort_values('number_of_abandoned', ascending=False).head(10))
+    plt.title('Top 10 Productos por Frecuencia de Abandono')
+    plt.xticks(rotation=45)
+
+    # Top 10 productos por probabilidad de abandono
+    plt.subplot(2, 2, 4)
+    sns.barplot(x='product_id', y='abandon_probability', data=df_combined.sort_values('abandon_probability', ascending=False).head(10))
+    plt.title('Top 10 Productos por Probabilidad de Abandono')
+    plt.xticks(rotation=45)
+
+    plt.tight_layout()
+    plt.show()
 
 
+#para el plot; focus on :
+#Top 10 productos por frecuencia de compra.
+#Top 10 productos por probabilidad de compra.
+#Top 10 productos por frecuencia de abandono.
+#Top 10 productos por probabilidad de abandono.
+
+'''
+def plot_combined_dataset():
+    
+    df_combined=combinar_datasets_totales()
+    
+    # Configuración de la visualización
+    plt.figure(figsize=(20, 10))
+
+    # Top 10 productos por frecuencia de compra
+    plt.subplot(2, 2, 1)
+    sns.barplot(x='product_id', y='number_of_orders', data=df_combined.sort_values('number_of_orders', ascending=False).head(10))
+    plt.title('Top 10 Productos por Frecuencia de Compra')
+    plt.xticks(rotation=45)
+
+    # Top 10 productos por probabilidad de compra
+    plt.subplot(2, 2, 2)
+    sns.barplot(x='product_id', y='purchase_probability', data=df_combined.sort_values('purchase_probability', ascending=False).head(10))
+    plt.title('Top 10 Productos por Probabilidad de Compra')
+    plt.xticks(rotation=45)
+
+    # Top 10 productos por frecuencia de abandono
+    plt.subplot(2, 2, 3)
+    sns.barplot(x='product_id', y='number_of_abandoned', data=df_combined.sort_values('number_of_abandoned', ascending=False).head(10))
+    plt.title('Top 10 Productos por Frecuencia de Abandono')
+    plt.xticks(rotation=45)
+
+    # Top 10 productos por probabilidad de abandono
+    plt.subplot(2, 2, 4)
+    sns.barplot(x='product_id', y='abandon_probability', data=df_combined.sort_values('abandon_probability', ascending=False).head(10))
+    plt.title('Top 10 Productos por Probabilidad de Abandono')
+    plt.xticks(rotation=45)
+
+    plt.tight_layout()
+    plt.show()
+
+'''
 
     
 
@@ -66,6 +136,7 @@ def main():
    #print(len(df_orders))
    #combinar_datasets_prod_pedidos_inventario()
    combinar_datasets_totales()
+   #plot_combined_dataset()
    
 
 
