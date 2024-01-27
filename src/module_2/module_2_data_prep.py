@@ -77,6 +77,29 @@ def combinar_datasets_totales():
 
     plt.tight_layout()
     plt.show()
+    return df_combined
+
+def test_combinar_datasets_totales():
+    # Aquí, suponemos que los DataFrames ya están cargados o los cargamos dentro de esta función.
+    # También, asegúrate de que la función 'combinar_datasets_totales' devuelva 'df_combined'.
+
+    df_combined = combinar_datasets_totales()
+
+    # Verificar que el resultado es un DataFrame.
+    assert isinstance(df_combined, pd.DataFrame), "El resultado debe ser un DataFrame."
+
+    # Comprobar que las columnas esperadas están presentes.
+    expected_columns = ['product_id', 'number_of_orders', 'purchase_probability', 'number_of_abandoned', 'abandon_probability']
+    for column in expected_columns:
+        assert column in df_combined.columns, f"Falta la columna esperada: {column}"
+
+    # Verificar que no hay valores NaN inesperados.
+    assert df_combined.notna().all().all(), "No deben existir valores NaN inesperados."
+
+    # Opcional: Comprobar el tamaño del DataFrame resultante.
+    # assert len(df_combined) > 0, "El DataFrame combinado no debe estar vacío."
+
+    print("Todas las pruebas pasaron correctamente.")
     
 
     
@@ -139,6 +162,7 @@ def main():
    #print(len(df_orders))
    #combinar_datasets_prod_pedidos_inventario()
    combinar_datasets_totales()
+   test_combinar_datasets_totales()
    #plot_combined_dataset()
    #hours_vs_orders_plot(df_abandoned_carts,'created_at')
    
