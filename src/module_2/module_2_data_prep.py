@@ -124,29 +124,70 @@ def probability_per_discount_check(percentage):
     have a huge disccount that catches the attention of our client. So maybe we should ask ourselfs that for our
     online shop we should focus more on some specific target products. Which ones? let's see
     '''
-def contar_pedidos_por_tipo():
-    # Mapear variant_id a product_type
-        variant_to_type = df_inventory.set_index('variant_id')['product_type'].to_dict()
-
-    # Crear una lista de todos los variant_id ordenados
-        ordered_variants = df_orders['ordered_items'].explode()
-
-    # Mapear variant_id a product_type en los pedidos
-        ordered_types = ordered_variants.map(variant_to_type)
-
-    # Contar las ocurrencias de cada product_type
-        type_counts = ordered_types.value_counts()
-
-    # Crear un nuevo DataFrame con los tipos más pedidos
-        top_types = type_counts.head(5).reset_index()
-        top_types.columns = ['product_type', 'order_count']
-        print(top_types)
-
-        return top_types
     
+    
+def contar_pedidos_por_tipo():
+    variant_info = df_inventory.set_index('variant_id')[['product_type', 'price']]
+
+    # Filtrar variant_id en df_orders y df_abandoned_carts que están en df_inventory
+    valid_variants = set(df_inventory['variant_id'])
+    ordered_variants = df_orders['ordered_items'].explode().map(lambda x: x if x in valid_variants else None).dropna()
+    abandoned_variants = df_abandoned_carts['variant_id'].explode().map(lambda x: x if x in valid_variants else None).dropna()
+    
+    # Asignar product_type y price a cada variant_id en los pedidos y en los abandonos
+    ordered_variants_info = variant_info.loc[ordered_variants]
+    abandoned_variants_info = variant_info.loc[abandoned_variants]
+
+    # Calcular ingresos por variant_id
+    ordered_variants_info['revenue'] = ordered_variants_info['price']
+    abandoned_variants_info['lost_revenue'] = abandoned_variants_info['price']
+
+    # Agregar y agrupar por product_type
+    revenue_per_type = ordered_variants_info.groupby('product_type')['revenue'].sum()
+    lost_revenue_per_type = abandoned_variants_info.groupby('product_type')['lost_revenue'].sum()
+
+    # Calcular ingresos netos por product_type
+    net_revenue_per_type = revenue_per_type - lost_revenue_per_type
+
+    # Contar pedidos y abandonos por product_type
+    order_counts = ordered_variants_info['product_type'].value_counts()
+    abandoned_counts = abandoned_variants_info['product_type'].value_counts()
+
+    # Crear un nuevo DataFrame
+    top_types = pd.DataFrame({
+        'order_count': order_counts,
+        'abandoned_count': abandoned_counts.reindex(order_counts.index, fill_value=0),
+        'net_revenue': net_revenue_per_type.reindex(order_counts.index, fill_value=0)
+    }).reset_index().rename(columns={'index': 'product_type'})
+
+    # Ordenar por ingresos netos (net_revenue) de mayor a menor
+    top_types = top_types.sort_values(by='net_revenue', ascending=False)
+    
+    top_types = top_types.sort_values(by='net_revenue', ascending=False)
+    top_10_types = top_types.head(10)
+    
+    print(top_10_types)
+
+    # Crear un gráfico de barras para el ingreso neto de las 10 principales categorías
+    plt.figure(figsize=(10, 6))
+    plt.bar(top_10_types['product_type'], top_10_types['net_revenue'], color='skyblue')
+    plt.xlabel('Product Type')
+    plt.ylabel('Net Revenue')
+    plt.title('Top 10 Product Types by Net Revenue')
+    plt.xticks(rotation=45)
+    plt.show()
+
+    return top_types
 
 
+'''
+We can see that clearly long-life-milk-substitudes is the product_type with a highest revenue. 
+This will be very useful since we now can focus more specificaly on this and others really high reveneu product
+types. I believe that regular users do buy a really high percentage on products belonging to the first 
+five highest revenues ones. Let's check. 
+'''
 
+def best_users_product_type():
 
 
 def test_combinar_datasets_totales():
