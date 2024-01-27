@@ -126,7 +126,7 @@ def probability_per_discount_check(percentage):
     '''
     
     
-def contar_pedidos_por_tipo():
+def contar_pedidos_por_tipo(): #nos da un graph e info sobre los product_type mas demandados
     variant_info = df_inventory.set_index('variant_id')[['product_type', 'price']]
 
     # Filtrar variant_id en df_orders y df_abandoned_carts que están en df_inventory
@@ -238,6 +238,11 @@ def best_users_product_type():
     return best_users
 
 
+'''
+okay, now we have a dataset with every user with information according their revenue, their total orders, their total
+abandons, their fav product type...
+'''
+
 
 
 
@@ -263,7 +268,73 @@ def test_combinar_datasets_totales():
 
     print("Todas las pruebas pasaron correctamente.")
     
+    
+def test_best_users_product_type():
+    # Crear datos de prueba
+    mock_inventory_data = {
+        'variant_id': [1, 2],
+        'product_type': ['type1', 'type2'],
+        'price': [10.0, 20.0]
+    }
+    mock_orders_data = {
+        'user_id': ['user1', 'user2', 'user1'],
+        'ordered_items': [[1], [2], [1]]
+    }
+    mock_abandoned_carts_data = {
+        'user_id': ['user1', 'user2'],
+        'variant_id': [1, 2]
+    }
 
+    df_inventory = pd.DataFrame(mock_inventory_data)
+    df_orders = pd.DataFrame(mock_orders_data)
+    df_abandoned_carts = pd.DataFrame(mock_abandoned_carts_data)
+
+    # Ejecutar la función best_users_product_type
+    best_users = best_users_product_type()
+    
+
+    # Comprobaciones de la prueba
+    assert isinstance(best_users, pd.DataFrame), "El resultado debe ser un DataFrame."
+    expected_columns = ['user_id', 'order_count', 'most_bought_product_type', 'abandoned_count', 'most_abandoned_product_type', 'revenue']
+    for column in expected_columns:
+        assert column in best_users.columns, f"Falta la columna esperada: {column}"
+ 
+    
+    print("Todas las pruebas pasaron correctamente.")
+
+
+
+def test_contar_pedidos_por_tipo():
+    # Crear datos de prueba
+    mock_inventory_data = {
+        'variant_id': [1, 2, 3],
+        'product_type': ['type1', 'type2', 'type3'],
+        'price': [10.0, 20.0, 15.0]
+    }
+    mock_orders_data = {
+        'user_id': ['user1', 'user2', 'user1'],
+        'ordered_items': [[1, 2], [2], [3]]
+    }
+    mock_abandoned_carts_data = {
+        'user_id': ['user1', 'user2'],
+        'variant_id': [3, 1]
+    }
+
+    df_inventory = pd.DataFrame(mock_inventory_data)
+    df_orders = pd.DataFrame(mock_orders_data)
+    df_abandoned_carts = pd.DataFrame(mock_abandoned_carts_data)
+
+    # Ejecutar la función contar_pedidos_por_tipo
+    top_types = contar_pedidos_por_tipo()
+
+    # Comprobaciones de la prueba
+    assert isinstance(top_types, pd.DataFrame), "El resultado debe ser un DataFrame."
+    expected_columns = ['product_type', 'order_count', 'abandoned_count', 'net_revenue']
+    for column in expected_columns:
+        assert column in top_types.columns, f"Falta la columna esperada: {column}"
+    assert all(column in top_types.columns for column in expected_columns), "El DataFrame no tiene las columnas esperadas."
+    
+    print("Todas las pruebas pasaron correctamente.")
 
 def main():
    # mean_price()
@@ -279,7 +350,10 @@ def main():
    #hours_vs_orders_plot(df_abandoned_carts,'created_at')
    #probability_per_discount_check(20)
    #contar_pedidos_por_tipo()
-   best_users_product_type()
+   #best_users_product_type()
+   #test_best_users_product_type()
+   test_contar_pedidos_por_tipo()
+   
 
 
 if __name__ == "__main__":
