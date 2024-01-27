@@ -188,6 +188,57 @@ five highest revenues ones. Let's check.
 '''
 
 def best_users_product_type():
+    # Mapear variant_id a product_type
+    variant_info = df_inventory.set_index('variant_id')[['product_type', 'price']].to_dict('index')
+
+    # Expandir los items ordenados y abandonados en df_orders y df_abandoned_carts
+    expanded_orders = df_orders.explode('ordered_items')
+    expanded_abandoned = df_abandoned_carts.explode('variant_id')
+
+    # Filtrar variant_id en df_orders y df_abandoned_carts que están en df_inventory
+    valid_variants = set(df_inventory['variant_id'])
+    expanded_orders = expanded_orders[expanded_orders['ordered_items'].isin(valid_variants)]
+    expanded_abandoned = expanded_abandoned[expanded_abandoned['variant_id'].isin(valid_variants)]
+
+    # Asignar product_type y price a cada variant_id en los pedidos y abandonos
+    expanded_orders['product_type'] = expanded_orders['ordered_items'].map(lambda x: variant_info[x]['product_type'])
+    expanded_orders['price'] = expanded_orders['ordered_items'].map(lambda x: variant_info[x]['price'])
+    expanded_abandoned['product_type'] = expanded_abandoned['variant_id'].map(lambda x: variant_info[x]['product_type'])
+
+    # Función para manejar grupos vacíos al encontrar el product_type más común
+    def most_common_product_type(x):
+        if len(x) > 0:
+            return x.value_counts().idxmax()
+        else:
+            return None
+
+    # Contar pedidos, abandonos y encontrar product_type más común por user_id
+    user_order_counts = expanded_orders['user_id'].value_counts()
+    user_abandoned_counts = expanded_abandoned['user_id'].value_counts()
+    most_bought_product_type = expanded_orders.groupby('user_id')['product_type'].agg(most_common_product_type)
+    most_abandoned_product_type = expanded_abandoned.groupby('user_id')['product_type'].agg(most_common_product_type)
+
+    # Calcular el revenue por usuario
+    revenue_per_user = expanded_orders.groupby('user_id')['price'].sum()
+
+   # Crear un nuevo DataFrame
+    best_users = pd.DataFrame({
+        'user_id': user_order_counts.index,
+        'order_count': user_order_counts,
+        'most_bought_product_type': most_bought_product_type,
+        'abandoned_count': user_abandoned_counts.reindex(user_order_counts.index, fill_value=0),
+        'most_abandoned_product_type': most_abandoned_product_type.reindex(user_order_counts.index),
+        'revenue': revenue_per_user
+    }).reset_index(drop=True)
+
+    # Ordenar el DataFrame por 'revenue' en orden descendente
+    best_users = best_users.sort_values(by='revenue', ascending=False)
+
+    print(best_users.head())
+    return best_users
+
+
+
 
 
 def test_combinar_datasets_totales():
@@ -227,7 +278,8 @@ def main():
    #plot_combined_dataset()
    #hours_vs_orders_plot(df_abandoned_carts,'created_at')
    #probability_per_discount_check(20)
-   contar_pedidos_por_tipo()
+   #contar_pedidos_por_tipo()
+   best_users_product_type()
 
 
 if __name__ == "__main__":
