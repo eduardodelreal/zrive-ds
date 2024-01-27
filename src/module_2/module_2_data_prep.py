@@ -1,10 +1,9 @@
-import boto3
+
 import pandas as pd
-import os
 import datetime
-import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 
 
