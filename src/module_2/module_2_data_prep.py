@@ -1,4 +1,3 @@
-
 import pandas as pd
 import datetime
 import matplotlib.pyplot as plt
@@ -15,7 +14,7 @@ df_orders = pd.read_parquet('local_data/orders.parquet', engine='pyarrow')
 df_regulars = pd.read_parquet('local_data/regulars.parquet', engine='pyarrow')
 df_users = pd.read_parquet('local_data/users.parquet', engine='pyarrow')
 
-def combinar_datasets_totales():
+def combinar_datasets_totales(): #to see what products are the most purchased and to see the most abandoned
     # Paso 1: Crear DataFrame de pedidos
     exploded_items = df_orders['ordered_items'].explode()  
     item_counts = exploded_items.value_counts()
@@ -79,6 +78,77 @@ def combinar_datasets_totales():
     plt.show()
     return df_combined
 
+
+
+'''
+one of the things we expect at first in our bussiness is that if price is reduced, customers
+will be more attracted to that product than before and therefor will have a bigger purchased probability.
+Let's consider a significat discount those bigger than the 20%. If there's a "significant discount", then 
+we believe there'll be more purchase probability than if there was less %
+'''
+
+def probability_per_discount_check(percentage):
+    data=df_inventory
+    menos=[]
+    mas=[]
+    for index, row in data.iterrows():
+        if row['compare_at_price'] == 0:
+            # Opción 1: Continuar con la siguiente iteración
+            continue
+
+            # Opción 2: Establecer el porcentaje de descuento en cero o algún valor predeterminado
+            # porcentaje_descuento = 0
+        else:
+            descuento = row['compare_at_price'] - row['price']
+            porcentaje_descuento = (descuento / row['compare_at_price']) * 100
+
+            # Comparar el porcentaje de descuento
+            if porcentaje_descuento > percentage:
+                mas.append(row['variant_id'])
+            else:
+                menos.append(row['variant_id'])
+    
+    # Crear subdataframes
+    df_mas = data[data['variant_id'].isin(mas)]
+    df_menos = data[data['variant_id'].isin(menos)]
+    
+    # Calcular la probabilidad de ser comprado
+    total_orders = df_orders['ordered_items'].explode().value_counts()
+    df_mas['purchase_probability'] = df_mas['variant_id'].apply(lambda x: total_orders.get(x, 0) / len(df_orders))
+    df_menos['purchase_probability'] = df_menos['variant_id'].apply(lambda x: total_orders.get(x, 0) / len(df_orders))
+    print(df_mas.head(),df_menos.head())
+    return df_mas, df_menos
+    
+    '''
+    But we can see how this has nothing to do with the disccount we make on the products unless we 
+    have a huge disccount that catches the attention of our client. So maybe we should ask ourselfs that for our
+    online shop we should focus more on some specific target products. Which ones? let's see
+    '''
+def contar_pedidos_por_tipo():
+    # Mapear variant_id a product_type
+        variant_to_type = df_inventory.set_index('variant_id')['product_type'].to_dict()
+
+    # Crear una lista de todos los variant_id ordenados
+        ordered_variants = df_orders['ordered_items'].explode()
+
+    # Mapear variant_id a product_type en los pedidos
+        ordered_types = ordered_variants.map(variant_to_type)
+
+    # Contar las ocurrencias de cada product_type
+        type_counts = ordered_types.value_counts()
+
+    # Crear un nuevo DataFrame con los tipos más pedidos
+        top_types = type_counts.head(5).reset_index()
+        top_types.columns = ['product_type', 'order_count']
+        print(top_types)
+
+        return top_types
+    
+
+
+
+
+
 def test_combinar_datasets_totales():
     # Aquí, suponemos que los DataFrames ya están cargados o los cargamos dentro de esta función.
     # También, asegúrate de que la función 'combinar_datasets_totales' devuelva 'df_combined'.
@@ -110,12 +180,13 @@ def main():
    #print(len(df_inventory))
    #print(len(df_orders))
    #combinar_datasets_prod_pedidos_inventario()
-   combinar_datasets_totales()
+   #combinar_datasets_totales()
    #test_combinar_datasets_totales()
    #test_plot_combined_dataset()
    #plot_combined_dataset()
    #hours_vs_orders_plot(df_abandoned_carts,'created_at')
-   
+   #probability_per_discount_check(20)
+   contar_pedidos_por_tipo()
 
 
 if __name__ == "__main__":
