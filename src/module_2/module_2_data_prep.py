@@ -243,6 +243,54 @@ okay, now we have a dataset with every user with information according their rev
 abandons, their fav product type...
 '''
 
+#now, let's check what would be the bestest vendors:
+
+def vendors_with_biggest_revenue():
+    variant_info = df_inventory.set_index('variant_id')[['vendor', 'price']].to_dict('index')
+
+    # Expandir los items ordenados y abandonados
+    expanded_orders = df_orders.explode('ordered_items')
+    expanded_abandoned = df_abandoned_carts.explode('variant_id')
+
+    # Filtrar variant_id en df_orders y df_abandoned_carts que están en df_inventory
+    valid_variants = set(df_inventory['variant_id'])
+    expanded_orders = expanded_orders[expanded_orders['ordered_items'].isin(valid_variants)]
+    expanded_abandoned = expanded_abandoned[expanded_abandoned['variant_id'].isin(valid_variants)]
+
+    # Asignar vendor y price a cada variant_id en los pedidos y en los abandonos
+    expanded_orders['vendor'] = expanded_orders['ordered_items'].apply(lambda x: variant_info.get(x, {}).get('vendor', 'Unknown'))
+    expanded_orders['revenue'] = expanded_orders['ordered_items'].apply(lambda x: variant_info.get(x, {}).get('price', 0))
+    abandoned_variants_info = variant_info.loc[expanded_abandoned['variant_id']]
+
+    # Calcular ingresos y perdidas por variant_id
+    abandoned_variants_info['lost_revenue'] = abandoned_variants_info['price']
+
+    # Agregar y agrupar por vendor
+    revenue_per_vendor = expanded_orders.groupby('vendor')['revenue'].sum()
+    lost_revenue_per_vendor = abandoned_variants_info.groupby('vendor')['lost_revenue'].sum()
+
+    # Calcular ingresos netos por vendor
+    net_revenue_per_vendor = revenue_per_vendor - lost_revenue_per_vendor
+
+    # Crear un nuevo DataFrame y ordenarlo por ingresos netos en orden ascendente
+    top_vendors = pd.DataFrame({
+        'vendor': net_revenue_per_vendor.index,
+        'net_revenue': net_revenue_per_vendor.values
+    })
+    top_vendors = top_vendors.sort_values(by='net_revenue', ascending=True)  # Orden ascendente
+
+    # Crear un gráfico de barras
+    plt.figure(figsize=(10, 6))
+    plt.barh(top_vendors['vendor'], top_vendors['net_revenue'], color='skyblue')
+    plt.xlabel('Net Revenue')
+    plt.ylabel('Vendor')
+    plt.title('Vendors with Biggest Revenue (Ascending)')
+    plt.xticks(rotation=45)
+    plt.show()
+
+    return top_vendors
+
+
 
 
 
@@ -352,7 +400,8 @@ def main():
    #contar_pedidos_por_tipo()
    #best_users_product_type()
    #test_best_users_product_type()
-   test_contar_pedidos_por_tipo()
+   #test_contar_pedidos_por_tipo()
+   vendors_with_biggest_revenue()
    
 
 
