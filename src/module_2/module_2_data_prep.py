@@ -1,5 +1,5 @@
 import pandas as pd
-import datetime
+from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -131,9 +131,11 @@ def probability_per_discount_check(percentage):
     return df_mas, df_menos
     
     '''
-    But we can see how this has nothing to do with the disccount we make on the products unless we 
-    have a huge disccount that catches the attention of our client. So maybe we should ask ourselfs that for our
-    online shop we should focus more on some specific target products. Which ones? let's see
+   However, our analysis indicates that the impact of discounts on our product sales is minimal,
+   unless the discount is significantly substantial to attract customer attention. This insight 
+   leads us to consider a strategic pivot for our online store. It may be prudent to concentrate
+   our efforts on a select range of target products. Which products should these be? Let's explore 
+   this further
     '''
     
     
@@ -305,6 +307,58 @@ def vendors_with_biggest_revenue():
 '''
 
 
+
+def analyze_abandoned_carts():
+    # Convertir timestamp a hora
+    #df_abandoned_carts['hour'] = df_abandoned_carts['created_at'].apply(lambda x: datetime.fromtimestamp(x/1000).hour)
+    df_abandoned_carts['hour'] = df_abandoned_carts['created_at'].dt.hour
+
+    # Conteo de abandonos por hora
+    hour_counts = df_abandoned_carts['hour'].value_counts()
+
+    # Gráfico circular de abandonos por hora
+    plt.figure(figsize=(8, 8))
+    hour_counts.plot(kind='pie', autopct='%1.1f%%')
+    plt.title('Abandonos de Carritos por Hora')
+    plt.ylabel('')
+    plt.show()
+
+    # Obtener las tres horas con más abandonos
+    top_hours = hour_counts.head(3).index
+
+    # Analizar los tipos de productos más abandonados en esas horas
+    for hour in top_hours:
+        # Filtrar carritos abandonados en la hora específica
+        hour_abandoned = df_abandoned_carts[df_abandoned_carts['hour'] == hour]
+        
+        # Obtener los variant_id y luego los product_type
+        variant_ids = hour_abandoned['variant_id'].explode()
+        product_types = df_inventory[df_inventory['variant_id'].isin(variant_ids)]['product_type']
+
+        # Conteo de product_types
+        product_type_counts = product_types.value_counts()
+
+        # Gráfico de los tipos de productos abandonados
+        plt.figure(figsize=(8, 6))
+        product_type_counts.plot(kind='bar')
+        plt.title(f'Tipos de Productos Más Abandonados a las {hour} horas')
+        plt.xlabel('Tipo de Producto')
+        plt.ylabel('Cantidad de Abandonos')
+        plt.xticks(rotation=45)
+   
+
+        print("Guardando el gráfico...")
+        plt.savefig('/home/edu/zrive-ds-1/zrive-ds/src/module_2/graphs/graph_1.png')
+        print("Gráfico guardado.")
+        plt.show()
+        plt.close()
+        
+
+        
+
+
+
+
 def test_combinar_datasets_totales():
     # Aquí, suponemos que los DataFrames ya están cargados o los cargamos dentro de esta función.
     # También, asegúrate de que la función 'combinar_datasets_totales' devuelva 'df_combined'.
@@ -402,7 +456,7 @@ def main():
    #print(len(df_inventory))
    #print(len(df_orders))
    #combinar_datasets_prod_pedidos_inventario()
-   combinar_datasets_totales()
+   #combinar_datasets_totales()
    #test_combinar_datasets_totales()
    #test_plot_combined_dataset()
    #plot_combined_dataset()
@@ -413,6 +467,7 @@ def main():
    #test_best_users_product_type()
    #test_contar_pedidos_por_tipo()
    #vendors_with_biggest_revenue()
+   analyze_abandoned_carts()
    
    #print(site.getsitepackages())
 
