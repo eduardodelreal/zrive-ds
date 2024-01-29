@@ -6,6 +6,8 @@ import numpy as np
 
 
 
+
+
 #first of all we do a little of analysis, as we open all the different datasets
 
 df_inventory = pd.read_parquet('local_data/inventory.parquet', engine='pyarrow')
@@ -48,6 +50,7 @@ def combinar_datasets_totales(): #to see what products are the most purchased an
     
     
     # Configuración de la visualización
+    
     plt.figure(figsize=(20, 10))
 
     # Top 10 productos por frecuencia de compra
@@ -73,9 +76,17 @@ def combinar_datasets_totales(): #to see what products are the most purchased an
     sns.barplot(x='product_id', y='abandon_probability', data=df_combined.sort_values('abandon_probability', ascending=False).head(10))
     plt.title('Top 10 Productos por Probabilidad de Abandono')
     plt.xticks(rotation=45)
-
+    
     plt.tight_layout()
+    print("Guardando el gráfico...")
+    plt.savefig('/home/edu/zrive-ds-1/zrive-ds/src/module_2/graphs/graph_1.png')
+    print("Gráfico guardado.")
+
     plt.show()
+    
+
+    # Cierra la figura para liberar memoria
+    plt.close()
     return df_combined
 
 
@@ -166,7 +177,7 @@ def contar_pedidos_por_tipo(): #nos da un graph e info sobre los product_type ma
     top_types = top_types.sort_values(by='net_revenue', ascending=False)
     top_10_types = top_types.head(10)
     
-    print(top_10_types)
+    #print(top_10_types)
 
     # Crear un gráfico de barras para el ingreso neto de las 10 principales categorías
     plt.figure(figsize=(10, 6))
@@ -242,7 +253,7 @@ def best_users_product_type():
 okay, now we have a dataset with every user with information according their revenue, their total orders, their total
 abandons, their fav product type...
 '''
-
+'''
 #now, let's check what would be the bestest vendors:
 
 def vendors_with_biggest_revenue():
@@ -291,7 +302,7 @@ def vendors_with_biggest_revenue():
     return top_vendors
 
 
-
+'''
 
 
 def test_combinar_datasets_totales():
@@ -391,7 +402,7 @@ def main():
    #print(len(df_inventory))
    #print(len(df_orders))
    #combinar_datasets_prod_pedidos_inventario()
-   #combinar_datasets_totales()
+   combinar_datasets_totales()
    #test_combinar_datasets_totales()
    #test_plot_combined_dataset()
    #plot_combined_dataset()
@@ -401,7 +412,10 @@ def main():
    #best_users_product_type()
    #test_best_users_product_type()
    #test_contar_pedidos_por_tipo()
-   vendors_with_biggest_revenue()
+   #vendors_with_biggest_revenue()
+   
+   #print(site.getsitepackages())
+
    
 
 
