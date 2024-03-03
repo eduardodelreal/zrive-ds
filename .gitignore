@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+src/module_5/data/financials_against_return.feather
+data/financials_against_return.feather
 # Distribution / packaging
 .Python
 build/
